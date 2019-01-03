@@ -26,8 +26,8 @@ namespace tellopp {
       , _keep_alive_timer(_ios)
       , _video_thread(&sdk2_drone::receive_video_thread, this)
       , _has_frame(false) {
-    boost::asio::socket_base::receive_buffer_size option(100000);
-    _video_socket.set_option(option);
+    //boost::asio::socket_base::receive_buffer_size option(100000);
+    //_video_socket.set_option(option);
     _command_socket.open(udp::v4());
     udp::resolver resolver(_ios);
     udp::resolver::query query(udp::v4(), "192.168.10.1", "8889");
@@ -64,8 +64,11 @@ namespace tellopp {
     _command_socket.async_receive_from(
         boost::asio::buffer(recv_buffer), remote_endpoint,
         [this](const boost::system::error_code& ec,  std::size_t bytes_transferred) {
-          if (ec)
+          if (ec) {
+            if (ec != boost::system::errc::operation_canceled)
+              LOG(INFO) << "receive response failed: ec" << ec.message();
             return;
+          }
           std::string s(&recv_buffer[0], bytes_transferred);
           LOG(INFO) << "got response: " << s;
           start_receive_response();

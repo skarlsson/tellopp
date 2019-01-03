@@ -10,6 +10,10 @@ int main(int argc, char* argv[])
     std::this_thread::sleep_for(1s);
     d.takeOff();
     std::this_thread::sleep_for(1s);
+    d.send_command("up 100");
+    std::this_thread::sleep_for(2s);
+    d.send_command("cw 90");
+    std::this_thread::sleep_for(2s);
     d.flip(tellopp::sdk2_drone::flip_front);
     std::this_thread::sleep_for(1s);
     d.send_command("stop");
