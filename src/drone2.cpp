@@ -1,4 +1,4 @@
-#include <tellopp/tello.h>
+#include <tellopp/drone2.h>
 #include <iostream>
 #include <boost/array.hpp>
 #include <glog/logging.h>
@@ -49,7 +49,7 @@ namespace tellopp {
     start_receive_response();
     _connected = true;
     send_command("command");
-    send_command("streamon");
+    send_command("streamon 4");
     start_receive_state();
     start_keep_alive();
 
@@ -95,31 +95,6 @@ namespace tellopp {
     cv::Mat mat(frame->height, frame->width, CV_8UC3, frame->data[0], frame->linesize[0]);
     mat.copyTo(image);
   }
-
-  /*
-   * void sdk2_drone::start_receive_video()
-  {
-    static udp::endpoint remote_endpoint;
-    static boost::array<unsigned char, 2048> recv_buffer;
-    static std::vector<unsigned char> raw_frame_buffer;
-    _video_socket.async_receive_from(
-        boost::asio::buffer(recv_buffer), remote_endpoint,
-        [this](const boost::system::error_code& ec,  std::size_t bytes_transferred) {
-          if (ec)
-            return;
-
-          raw_frame_buffer.insert(std::end(raw_frame_buffer), &recv_buffer[0], &recv_buffer[bytes_transferred]);
-          if (bytes_transferred != 1460){
-            // TODO we should wait for a framestart before emitting those...
-            tellopp::spinlock::scoped_lock xxx(_decoder_lock);
-            _decoder_frame_buffer = raw_frame_buffer;
-            _something_to_decode = true;
-            raw_frame_buffer.clear();
-          }
-          start_receive_video();
-        });
-  }
-   */
 
   void sdk2_drone::receive_video_thread() {
     udp::endpoint remote_endpoint;
@@ -219,4 +194,5 @@ namespace tellopp {
     _last_frame.copyTo(*frame);
     return true;
   }
+
 }

@@ -33,7 +33,7 @@
 #include <dlib/image_processing/render_face_detections.h>
 #include <dlib/image_processing.h>
 #include <dlib/gui_widgets.h>
-#include <tellopp/tello.h>
+#include <tellopp/drone2.h>
 
 using namespace dlib;
 using namespace std;
