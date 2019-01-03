@@ -49,7 +49,7 @@ namespace tellopp {
     start_receive_response();
     _connected = true;
     send_command("command");
-    send_command("streamon 4");
+    send_command("streamon");
     start_receive_state();
     start_keep_alive();
 
