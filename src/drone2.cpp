@@ -160,7 +160,7 @@ namespace tellopp {
 
   // TakeOff tells drones to liftoff and start flying.
 
-  void sdk2_drone::takeOff() {
+  void sdk2_drone::take_off() {
     send_command("takeoff");
   }
 

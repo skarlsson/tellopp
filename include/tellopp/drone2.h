@@ -15,26 +15,28 @@ using namespace std::chrono_literals;
 using boost::asio::ip::udp;
 
 namespace tellopp {
+
+  // move to common
+  enum fliptype_t {
+    flip_front = 0,
+    flip_left = 1,
+    flip_back = 2,
+    flip_right = 3,
+    flip_forward_left = 4,
+    flip_back_left = 5,
+    flip_back_right = 6,
+    flip_forward_right = 7
+  };
+
   class sdk2_drone {
   public:
-      enum fliptype_t {
-      flip_front = 0,
-      flip_left = 1,
-      flip_back = 2,
-      flip_right = 3,
-      flip_forward_left = 4,
-      flip_back_left = 5,
-      flip_back_right = 6,
-      flip_forward_right = 7
-    };
-
     sdk2_drone();
 
     ~sdk2_drone();
 
     bool connect();
 
-    void takeOff();
+    void take_off();
 
     void land();
 

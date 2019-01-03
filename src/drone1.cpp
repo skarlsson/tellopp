@@ -38,6 +38,8 @@ namespace tellopp {
   }
 
   sdk1_drone::~sdk1_drone() {
+    land();
+    //
     _work.reset();
     _run = false;
     _keep_alive_timer.cancel();
@@ -109,31 +111,6 @@ namespace tellopp {
     mat.copyTo(image);
   }
 
-  /*
-   * void sdk2_drone::start_receive_video()
-  {
-    static udp::endpoint remote_endpoint;
-    static boost::array<unsigned char, 2048> recv_buffer;
-    static std::vector<unsigned char> raw_frame_buffer;
-    _video_socket.async_receive_from(
-        boost::asio::buffer(recv_buffer), remote_endpoint,
-        [this](const boost::system::error_code& ec,  std::size_t bytes_transferred) {
-          if (ec)
-            return;
-
-          raw_frame_buffer.insert(std::end(raw_frame_buffer), &recv_buffer[0], &recv_buffer[bytes_transferred]);
-          if (bytes_transferred != 1460){
-            // TODO we should wait for a framestart before emitting those...
-            tellopp::spinlock::scoped_lock xxx(_decoder_lock);
-            _decoder_frame_buffer = raw_frame_buffer;
-            _something_to_decode = true;
-            raw_frame_buffer.clear();
-          }
-          start_receive_video();
-        });
-  }
-   */
-
   void sdk1_drone::receive_video_thread() {
     udp::endpoint remote_endpoint;
     boost::array<unsigned char, 2048> recv_buffer;
@@ -165,23 +142,6 @@ namespace tellopp {
     }
   }
 
-  /*
-   * void sdk1_drone::start_receive_state()
-  {
-    static udp::endpoint remote_endpoint;
-    static boost::array<char, 2048> recv_buffer;
-    _state_socket.async_receive_from(
-        boost::asio::buffer(recv_buffer), remote_endpoint,
-        [this](const boost::system::error_code& ec,  std::size_t bytes_transferred) {
-          if (ec)
-            return;
-          std::string s(&recv_buffer[0], bytes_transferred);
-          //LOG(INFO) << "got state: " << s;
-          start_receive_state();
-        });
-  }
-   */
-
   void sdk1_drone::start_keep_alive() {
     _keep_alive_timer.expires_from_now(boost::posix_time::milliseconds(100));
     _keep_alive_timer.async_wait([this](const boost::system::error_code& ec){
@@ -201,29 +161,53 @@ namespace tellopp {
 
   // TakeOff tells drones to liftoff and start flying.
 
-  void sdk1_drone::takeOff() {
-    send_command("takeoff");
+  void sdk1_drone::take_off() {
+    tellopp::spinlock::scoped_lock sl(_lock);
+    _command_packet.init(takeoffCommand, 0x68, 0);
+    seq++;
+    _command_packet.append_le(seq);
+    _command_packet.finalize();
+    auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
   }
 
+  void sdk1_drone::throw_take_off() {
+    tellopp::spinlock::scoped_lock sl(_lock);
+    _command_packet.init(throwtakeoffCommand, 0x48, 0);
+    seq++;
+    _command_packet.append_le(seq);
+    _command_packet.finalize();
+    auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
+  }
+
+
   void sdk1_drone::land() {
-    send_command("land");
+    tellopp::spinlock::scoped_lock sl(_lock);
+    _command_packet.init(landCommand, 0x68, 1);
+    seq++;
+    _command_packet.append_le(seq);
+    _command_packet.append(0x00);
+    _command_packet.finalize();
+    auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
+  }
+
+  void sdk1_drone::palm_land() {
+    tellopp::spinlock::scoped_lock sl(_lock);
+    _command_packet.init(palmLandCommand, 0x68, 1);
+    seq++;
+    _command_packet.append_le(seq);
+    _command_packet.append(0x00);
+    _command_packet.finalize();
+    auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
   }
 
   void sdk1_drone::flip(fliptype_t t){
-    switch (t){
-      case flip_front:
-        send_command("flip f");
-        break;
-      case flip_left:
-        send_command("flip l");
-        break;
-      case flip_back:
-        send_command("flip b");
-        break;
-      case flip_right:
-        send_command("flip r");
-        break;
-    }
+    tellopp::spinlock::scoped_lock sl(_lock);
+    _command_packet.init(flipCommand, 0x70, 1);
+    seq++;
+    _command_packet.append_le(seq);
+    _command_packet.append(t);
+    _command_packet.finalize();
+    auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
   }
 
   bool sdk1_drone::read_frame(cv::Mat* frame){

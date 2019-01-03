@@ -16,21 +16,22 @@ using boost::asio::ip::udp;
 
 namespace tellopp {
 
+  // move to common
+  enum fliptype_t {
+    flip_front = 0,
+    flip_left = 1,
+    flip_back = 2,
+    flip_right = 3,
+    flip_forward_left = 4,
+    flip_back_left = 5,
+    flip_back_right = 6,
+    flip_forward_right = 7
+  };
+
+
   class sdk1_drone {
   public:
-      enum fliptype_t {
-      flip_front = 0,
-      flip_left = 1,
-      flip_back = 2,
-      flip_right = 3,
-      flip_forward_left = 4,
-      flip_back_left = 5,
-      flip_back_right = 6,
-      flip_forward_right = 7
-    };
-
-
-    struct stick_state {
+      struct stick_state {
       float rx = 0;
       float ry = 0;
       float lx = 0;
@@ -45,9 +46,13 @@ namespace tellopp {
 
     bool connect();
 
-    void takeOff();
+    void take_off();
+
+    void throw_take_off();
 
     void land();
+
+    void palm_land();
 
     void flip(fliptype_t t);
 
@@ -56,6 +61,7 @@ namespace tellopp {
     void send_command(std::string);
 
   private:
+
     void StartVideo();
     void SetVideoEncoderRate(videobitrate_t rate);
     void SendDateTime();
