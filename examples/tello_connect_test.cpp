@@ -3,15 +3,21 @@
 int main(int argc, char* argv[])
 {
   {
-    tellopp::drone d;
+    tellopp::sdk2_drone d;
     d.connect();
-    //std::this_thread::sleep_for(2s);
+    std::this_thread::sleep_for(2s);
+    d.send_command("battery?");
+    std::this_thread::sleep_for(1s);
     d.takeOff();
-    //std::this_thread::sleep_for(5s);
-    //d.flip(tellopp::drone::flip_forward_left);
-    std::this_thread::sleep_for(10s);
+    std::this_thread::sleep_for(1s);
+    d.flip(tellopp::sdk2_drone::flip_front);
+    std::this_thread::sleep_for(1s);
+    d.send_command("stop");
+    std::this_thread::sleep_for(1s);
+    d.send_command("down 20");
+    std::this_thread::sleep_for(3s);
     d.land();
-    std::this_thread::sleep_for(10s);
+    std::this_thread::sleep_for(2s);
   }
 
   return 0;

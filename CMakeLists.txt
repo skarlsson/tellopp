@@ -34,12 +34,14 @@ add_definitions(-g -D_FILE_OFFSET_BITS=64 -D_REENTRANT -DEXTERNAL_LOCKS -DMULTIT
 add_definitions(-fPIC)
 add_definitions(-Wno-deprecated)
 
+SET(H264LIBS avcodec avutil swscale)
+
 SET(DLIB_LIBS dlib cblas lapack X11)
 
 SET(OPENCV_LIBS opencv_core opencv_highgui opencv_imgproc opencv_videoio opencv_imgcodecs)
 
-SET(EXT_LIBS_SHARED ${DLIB_LIBS} ${OPENCV_LIBS} ${BOOST_LIBS} glog crypto ssl)
-SET(EXT_LIBS_STATIC ${DLIB_LIBS} ${OPENCV_LIBS} ${BOOST_LIBS} glog crypto ssl)
+SET(EXT_LIBS_SHARED ${DLIB_LIBS} ${OPENCV_LIBS} ${BOOST_LIBS} ${H264LIBS} glog crypto ssl)
+SET(EXT_LIBS_STATIC ${DLIB_LIBS} ${OPENCV_LIBS} ${BOOST_LIBS} ${H264LIBS} glog crypto ssl)
 
 SET(CSI_LIBS_SHARED tellopp ${EXT_LIBS_SHARED})
 SET(CSI_LIBS_STATIC tellopp_s ${EXT_LIBS_STATIC})
