@@ -132,14 +132,26 @@ namespace tellopp {
             tellopp::spinlock::scoped_lock sl(_lock);
             avframeToMat1(&frame, _last_frame);
             _has_frame = true;
+            _video_stable = true;
           }
         } catch (...)
         {
+          _video_stable = false;
         }
         raw_frame_buffer.clear();
       }
 
     }
+  }
+
+  bool sdk1_drone::read_frame(cv::Mat* frame){
+    if (!_has_frame)
+      return false;
+
+    tellopp::spinlock::scoped_lock sl(_lock);
+    _has_frame = false;
+    _last_frame.copyTo(*frame);
+    return true;
   }
 
   void sdk1_drone::start_keep_alive() {
@@ -210,16 +222,34 @@ namespace tellopp {
     auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
   }
 
-  bool sdk1_drone::read_frame(cv::Mat* frame){
-    if (!_has_frame)
-      return false;
-
+  void sdk1_drone::SetExposureLevel(exposure_level_t level){
     tellopp::spinlock::scoped_lock sl(_lock);
-    _has_frame = false;
-    _last_frame.copyTo(*frame);
-    return true;
+    _command_packet.init(exposureCommand, 0x48, 1);
+    seq++;
+    _command_packet.append_le(seq);
+    _command_packet.append(level);
+    _command_packet.finalize();
+    auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
   }
 
+  void sdk1_drone::StartVideo()
+  {
+    tellopp::spinlock::scoped_lock sl(_lock);
+    _command_packet.init(videoStartCommand, 0x60, 0);
+    _command_packet.append_le(0x0000); // seq = 0
+    _command_packet.finalize();
+    auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
+  }
+
+  void sdk1_drone::SetVideoEncoderRate(videobitrate_t rate) {
+    tellopp::spinlock::scoped_lock sl(_lock);
+    _command_packet.init(videoEncoderRateCommand, 0x68, 1);
+    seq++;
+    _command_packet.append_le(seq);
+    _command_packet.append(rate);
+    _command_packet.finalize();
+    auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
+  }
 
   void sdk1_drone::SendDateTime() {
     tellopp::spinlock::scoped_lock sl(_lock);
@@ -264,9 +294,9 @@ namespace tellopp {
     int16_t axis4 = int16_t(660.0 * _stick_state.lx + 1024.0);
 
 
-    //char buf[128];
-    //sprintf(buf, "stick command: yaw=%4d thr=%4d pit=%4d rol=%4d", axis4, axis3, axis2, axis1);
-    //std::cerr << buf << std::endl;
+    char buf[128];
+    sprintf(buf, "stick command: yaw=%4d thr=%4d pit=%4d rol=%4d", axis4, axis3, axis2, axis1);
+    //LOG(INFO) << buf;
 
     //log.debug("stick command: yaw=%04x thr=%04x pit=%04x rol=%04x" %
     //          (axis4, axis3, axis2, axis1))
@@ -308,25 +338,6 @@ namespace tellopp {
     _stick_packet.finalize();
     auto x = _command_socket.send_to(boost::asio::buffer(_stick_packet.data(), _stick_packet.size()), _drone_endpoint);
   }
-
-  void sdk1_drone::StartVideo()
-  {
-    tellopp::spinlock::scoped_lock sl(_lock);
-    _command_packet.init(videoStartCommand, 0x60, 0);
-    _command_packet.append_le(0x0000); // seq = 0
-    _command_packet.finalize();
-    auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
-  }
-
-  void sdk1_drone::SetVideoEncoderRate(videobitrate_t rate) {
-  tellopp::spinlock::scoped_lock sl(_lock);
-  _command_packet.init(videoEncoderRateCommand, 0x68, 1);
-  seq++;
-  _command_packet.append_le(seq);
-  _command_packet.append(rate);
-  _command_packet.finalize();
-  auto x = _command_socket.send_to(boost::asio::buffer(_command_packet.data(), _command_packet.size()), _drone_endpoint);
-}
 
 
 }

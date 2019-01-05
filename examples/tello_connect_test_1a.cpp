@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
     std::this_thread::sleep_for(1s);
     //d.send_command("down 20");
     std::this_thread::sleep_for(3s);
-    d.land();
+    d.palm_land();
     std::this_thread::sleep_for(2s);
   }
 

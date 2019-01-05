@@ -51,6 +51,12 @@ namespace tellopp {
           VideoBitRate4M = 5,
     };
 
+    enum exposure_level_t {
+      exposure_level_0 =0,
+      exposure_level_1 =1,
+      exposure_level_2 =2
+    };
+
   class tx_packet {
   public:
     void init(message_t msg, uint8_t pktType, size_t payload_size) {

@@ -27,14 +27,25 @@
     2011.  SSE4 is the next fastest and is supported by most current machines.  
 */
 
+/*
+ * #include <dlib/pixel.h>
+#include <dlib/dnn.h>
+#include <dlib/gui_widgets.h>
+#include <dlib/clustering.h>
+#include <dlib/string.h>
+#include <dlib/image_io.h>
+ */
+
 #include <dlib/opencv.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_processing/render_face_detections.h>
 #include <dlib/image_processing.h>
 #include <dlib/gui_widgets.h>
+
 #include <glog/logging.h>
-#include <tellopp/drone2.h>
+#include <tellopp/drone1.h>
+#include <dlib_utils/face.h>
 
 using namespace dlib;
 using namespace std;
@@ -56,28 +67,68 @@ int main()
     return -1;
   }
 
-  tellopp::sdk2_drone d;
+  shape_predictor sp;
+  try {
+    deserialize("../shape_predictor_5_face_landmarks.dat") >> sp;
+  }
+  catch(serialization_error& e)
+  {
+    cout << "You need dlib's default face landmarking model file to run this example." << endl;
+    cout << "You can get it from the following URL: " << endl;
+    cout << "   http://dlib.net/files/shape_predictor_5_face_landmarks.dat.bz2" << endl;
+    cout << endl << e.what() << endl;
+    return -1;
+  }
+
+
+  face_recognition recognition_net;
+
+  try {
+    recognition_net.load("../dlib_face_recognition_resnet_model_v1.dat");
+  }
+  catch(serialization_error& e) {
+    cout << "You need dlib's default recognition model file to run this example." << endl;
+    cout << "You can get it from the following URL: " << endl;
+    cout << " \"http://dlib.net/files/dlib_face_recognition_resnet_model_v1.dat.bz2" << endl;
+    cout << endl << e.what() << endl;
+    return -1;
+  }
+
+  tellopp::sdk1_drone d;
   d.connect();
-  bool landed = false;
+  volatile bool landing = false;
+  volatile bool landed = false;
 
-  // TODO wait for connection and video to be stable
+  while (!d.stable_video())
+    std::this_thread::sleep_for(100ms);
 
-  std::thread t([&d, &landed](){
+  LOG(INFO) << "stable video - starting run";
+
+  // flight controll thread
+  std::thread t([&](){
     std::this_thread::sleep_for(10s);
-    d.take_off();
-    std::this_thread::sleep_for(10s);
-    d.flip(tellopp::flip_front);
-    std::this_thread::sleep_for(4s);
-    d.land();
+
+    LOG(INFO) << "throw_take_off";
+    //d.throw_take_off();
+    //wait for liftoff
+    std::this_thread::sleep_for(30s);
+    landing = true;
+    d.stick().hover();
+    LOG(INFO) << "landing";
+    d.palm_land();
     std::this_thread::sleep_for(2s);
+    LOG(INFO) << "landed";
     landed=true;
   });
 
   try
   {
+    bool have_flipped = false;
+    bool searching = true;
+
     image_window win;
     // Grab and process frames until the main window is closed by the user.
-    while(!win.is_closed() || !landed)
+    while(!win.is_closed() && !landed)
     {
       // Grab a frame
       cv::Mat temp;
@@ -94,18 +145,61 @@ int main()
 
         // Detect faces
         std::vector<rectangle> faces = detector(cimg);
+
         // Find the pose of each face.
         std::vector<full_object_detection> shapes;
-        for (unsigned long i = 0; i < faces.size(); ++i)
-          shapes.push_back(pose_model(cimg, faces[i]));
 
-        if (faces.size()){
-          LOG(INFO) << "found face - should flip";
+        //for (unsigned long i = 0; i < faces.size(); ++i)
+        //  shapes.push_back(pose_model(cimg, faces[i]));
+
+        // This call asks the DNN to convert each face image in faces into a 128D vector.
+        // In this 128D vector space, images from the same person will be close to each other
+        // but vectors from different people will be far apart.  So we can use these vectors to
+        // identify if a pair of images are from the same person or from different people.
+
+
+        std::vector<matrix<rgb_pixel>> faces2;
+        for (auto face : faces)
+        {
+          auto shape = sp(cimg, face);
+          matrix<rgb_pixel> face_chip;
+          extract_image_chip(cimg, get_face_chip_details(shape,150,0.25), face_chip);
+          faces2.push_back(move(face_chip));
         }
+
+        std::vector<matrix<float,0,1>> face_descriptors = recognition_net.get_face_descriptors(faces2);
+
+        // add stick control
+        // search mode
+        // track face - try to get midpoint of shape to center of image
+        // try to occupy face at 100 pixels - 60cm??
+
+        if (!landing){
+          if (faces.size()) {
+            if (searching){
+              LOG(INFO) << "face found - stopped searching";
+              searching = false;
+            }
+            d.stick().hover();
+          } else {
+            if (!searching){
+              LOG(INFO) << "face lost - staring searching";
+              searching = true;
+            }
+            d.stick().set_yaw(100);
+          }
+        }
+
 
         // Display it all on the screen
         win.clear_overlay();
         win.set_image(cimg);
+
+        // put some boxes on the faces so we can see that the detector is finding
+        // them.
+        win.add_overlay(faces);
+
+        // this gives
         win.add_overlay(render_face_detections(shapes));
       } else {
         std::this_thread::sleep_for(10ms);

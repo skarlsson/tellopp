@@ -36,7 +36,7 @@ add_definitions(-Wno-deprecated)
 
 SET(H264LIBS avcodec avutil swscale)
 
-SET(DLIB_LIBS dlib cblas lapack X11)
+SET(DLIB_LIBS dlib cblas lapack X11 png)
 
 SET(OPENCV_LIBS opencv_core opencv_highgui opencv_imgproc opencv_videoio opencv_imgcodecs)
 
@@ -44,7 +44,7 @@ SET(EXT_LIBS_SHARED ${DLIB_LIBS} ${OPENCV_LIBS} ${BOOST_LIBS} ${H264LIBS} glog c
 SET(EXT_LIBS_STATIC ${DLIB_LIBS} ${OPENCV_LIBS} ${BOOST_LIBS} ${H264LIBS} glog crypto ssl)
 
 SET(CSI_LIBS_SHARED tellopp ${EXT_LIBS_SHARED})
-SET(CSI_LIBS_STATIC tellopp_s ${EXT_LIBS_STATIC})
+SET(CSI_LIBS_STATIC tellopp_s dlib_utils_s ${EXT_LIBS_STATIC})
 
 SET(MKL_INCLUDE_PATH /opt/intel/mkl/include)
 SET(MKL_LIB_PATH /opt/intel/lib)
@@ -77,6 +77,23 @@ if (BUILD_SHARED_LIBS)
             ARCHIVE DESTINATION lib
             )
 endif ()
+
+file(GLOB DLIB_UTILS_SRCS
+        dlib_utils/*.cpp
+        )
+
+file(GLOB DLIB_UTILS_HEADERS
+        include/dlib_utils/*.h
+        )
+
+if (BUILD_STATIC_LIBS)
+    ADD_LIBRARY(dlib_utils_s STATIC ${DLIB_UTILS_SRCS} ${DLIB_UTILS_HEADERS})
+    INSTALL(TARGETS dlib_utils_s
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            )
+endif ()
+
 
 INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include)
 

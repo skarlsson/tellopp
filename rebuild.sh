@@ -1,5 +1,6 @@
 #!/bin/bash
-rm -rf build bin lib
+#rm -rf build bin lib
+rm -rf build lib
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
