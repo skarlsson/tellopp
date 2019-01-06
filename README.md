@@ -1,5 +1,5 @@
 ```
-sudo apt-get install libopenblas-dev liblapack-dev libsdl2-dev joystick
+sudo apt-get install -y libopenblas-dev liblapack-dev libsdl2-dev joystick libatlas-base-dev
 ```
 
 ```
