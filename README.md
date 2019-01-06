@@ -10,7 +10,7 @@ sudo make install
 cd ..
 cd examples
 mkdir build; cd build; cmake .. -DUSE_AVX_INSTRUCTIONS=1; make -j8
-cd ../..
+cd ../../..
 ```
 
 For some reason after install dlib seems to require additional packets - this should probably go away
