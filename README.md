@@ -23,16 +23,6 @@ sudo sh -c 'echo deb https://apt.repos.intel.com/mkl all main > /etc/apt/sources
 sudo apt-get update && sudo apt-get install intel-mkl-64bit-2019.1-053
 ```
 
-install gainput 
-```
-git clone https://github.com/jkuhlmann/gainput.git
-cd gainput 
-mkdir build; cd build; cmake ..; make -j8
-sudo make install
-cd ../..
-```
-
-
 Build tellopp
 ```
 ./rebuild.sh

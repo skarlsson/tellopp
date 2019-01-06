@@ -100,10 +100,10 @@ void stick_handler::handle_event(const SDL_Event& event){
                 _stick_state.set_roll((event.jaxis.value * 100) / 32678);
                 break;
               case PITCH:
-                _stick_state.set_pitch((event.jaxis.value * 100) / 32678);
+                _stick_state.set_pitch((event.jaxis.value * -100) / 32678);
                 break;
               case YAW:
-                _stick_state.set_yaw((event.jaxis.value * 100) / 32678);
+                _stick_state.set_yaw((event.jaxis.value * -100) / 32678);
                 break;
               case THROTTLE:
                 _stick_state.set_throttle((event.jaxis.value * 100) / 32678);
